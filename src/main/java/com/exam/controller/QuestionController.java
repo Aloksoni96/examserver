@@ -9,10 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:4200")
@@ -86,11 +83,14 @@ public class QuestionController {
     public ResponseEntity<?> getQuestionsOfQuiz(@PathVariable("qid") Long qid){
         Quiz quiz = this.quizService.getQuiz(qid);
         Set<Question> question = quiz.getQuestion();
-        List list = new ArrayList(question);
+        List<Question> list = new ArrayList(question);
         if (list.size()>Integer.parseInt(quiz.getNoOfQuestion())) {
 
             list = list.subList(0, Integer.parseInt(quiz.getNoOfQuestion() + 1));
         }
+        list.forEach((q)->{
+            q.setAnswer("");
+        });
         Collections.shuffle(list);
        return ResponseEntity.ok(list);
 //        Quiz quiz = new Quiz();
@@ -106,5 +106,33 @@ public class QuestionController {
         quiz.setQid(qid);
         Set<Question> questionsOfQuiz = this.questionService.getQuestionsOfQuiz(quiz);
         return ResponseEntity.ok(questionsOfQuiz);
+    }
+
+    // eval Questions
+    @PostMapping("/eval-quiz")
+    public  ResponseEntity<?> evalQuiz(@RequestBody List<Question> questions){
+        System.out.println(questions);
+       double marksGot = 0;
+     int   correctOptions = 0;
+      int  attempted = 0;
+        for(Question q: questions)
+        {
+            Question questionByQuestionId = this.questionService.getQuestionByQuestionId(q.getQuesId());
+            if (questionByQuestionId.getAnswer().trim().equals(q.getGivenAnswers().trim())){
+                //correcr
+                correctOptions++;
+
+                double singleMarks = Double.parseDouble(questions.get(0).getQuiz().getMaxMarks())/questions.size();
+                marksGot+=singleMarks;
+            }
+            // Check if the question was attempted (not null and not an empty string)
+            if (q.getGivenAnswers() != null && !q.getGivenAnswers().trim().isEmpty()) {
+                attempted++;
+            }
+        }
+        Map<Object , Object> map =Map.of("marksGot" , marksGot ,"correctOptions" , correctOptions ,"attempted" ,attempted);
+
+        return ResponseEntity.ok(map);
+
     }
 }

@@ -49,4 +49,9 @@ public class QuestionServiceImpl implements QuestionService {
     public Set<Question> getQuestionsOfQuiz(Quiz quiz) {
         return this.questionRepository.findByQuiz(quiz);
     }
+
+    @Override
+    public Question getQuestionByQuestionId(Long questionId) {
+        return this.questionRepository.getOne(questionId);
+    }
 }
